@@ -42,5 +42,7 @@ class tree
 
 unsigned long long eval_sum_func(node *leaf);
 void *eval_sum_pthread_func(void *args);
+unsigned long long eval_sum_openmp_func(node *leaf);
 long double eval_geom_mean_func(node *leaf);
 void *eval_geom_mean_pthread_func(void *args);
+long double eval_geom_mean_openmp_func(node *leaf);

@@ -80,21 +80,18 @@ unsigned long long tree::eval_sum_pthread(unsigned int level)
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
 	cout << "Time taken by pthread algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
 
-	return sum;	
+	return sum;
 }
 
 unsigned long long tree::eval_sum_openmp(unsigned int level)
 {
 	auto start = high_resolution_clock::now();
-	//omp_set_max_active_levels(level - 1);
+	omp_set_nested(1);
+	omp_set_max_active_levels(level);
 	unsigned long long sum = 0;
 	if (root_ != nullptr)
 	{
-		struct pthread_node pnode;
-		pnode.leaf = root_;
-		pnode.level = level;
-		eval_sum_pthread_func((void*) &pnode);
-		sum = pnode.leaf->tree_sum;
+		sum = eval_sum_openmp_func(root_);
 	}
 	else
 	{
@@ -103,7 +100,7 @@ unsigned long long tree::eval_sum_openmp(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by pthread algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by openmp algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;	
 }
@@ -157,15 +154,13 @@ long double tree::eval_geom_mean_pthread(unsigned int level)
 long double tree::eval_geom_mean_openmp(unsigned int level)
 {
 	auto start = high_resolution_clock::now();
-	//omp_set_max_active_levels(level - 1);
+	omp_set_nested(1);
+	omp_set_max_active_levels(level);
 	long double sum = 0;
 	if (root_ != nullptr)
 	{
-		struct pthread_node pnode;
-		pnode.leaf = root_;
-		pnode.level = level;
-		eval_geom_mean_pthread_func((void*) &pnode);
-		sum = pnode.leaf->tree_geometric_mean;
+		eval_geom_mean_openmp_func(root_);
+		sum = root_->tree_geometric_mean;
 	}
 	else
 	{
@@ -174,7 +169,7 @@ long double tree::eval_geom_mean_openmp(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by pthread algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by openmp algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;	
 }
@@ -347,6 +342,36 @@ void *eval_sum_pthread_func(void *args)
 	return 0;
 }
 
+unsigned long long eval_sum_openmp_func(node* leaf)
+{
+	if (omp_get_active_level() >= omp_get_max_active_levels())
+	{		
+		return eval_sum_func(leaf);
+	}
+	#pragma omp parallel num_threads(2)
+	{
+		#pragma omp sections
+		{
+			#pragma omp section
+			{
+				if (leaf->left != nullptr)
+				{
+					leaf->tree_sum += eval_sum_openmp_func(leaf->left);
+				}
+			}
+			#pragma omp section
+			{
+				if (leaf->right != nullptr)
+				{
+					leaf->tree_sum += eval_sum_openmp_func(leaf->right);
+				}
+			}
+		}
+	}
+	leaf->tree_sum += leaf->value;
+	return leaf->tree_sum;
+}
+
 long double eval_geom_mean_func(node* leaf)
 {
 	unsigned short power = 1;
@@ -424,4 +449,37 @@ void *eval_geom_mean_pthread_func(void *args)
 	}
 
 	return 0;
+}
+
+long double eval_geom_mean_openmp_func(node* leaf)
+{
+	if (omp_get_active_level() >= omp_get_max_active_levels())
+	{		
+		return eval_geom_mean_func(leaf);
+	}
+	unsigned short power = 1;
+	#pragma omp parallel num_threads(2)
+	{
+		#pragma omp sections
+		{
+			#pragma omp section
+			{
+				if (leaf->left != nullptr)
+				{
+					leaf->tree_geometric_mean *= eval_geom_mean_openmp_func(leaf->left);
+					power++;
+				}
+			}			
+			#pragma omp section
+			{
+				if (leaf->right != nullptr)
+				{
+					leaf->tree_geometric_mean *= eval_geom_mean_openmp_func(leaf->right);
+					power++;
+				}
+			}
+		}
+	}
+	leaf->tree_geometric_mean = pow(leaf->tree_geometric_mean * leaf->value, 1.0 / power);
+	return leaf->tree_geometric_mean;
 }
