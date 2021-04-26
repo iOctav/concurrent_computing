@@ -78,7 +78,7 @@ unsigned long long tree::eval_sum_pthread(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by pthread algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by pthread algorithm with " << thread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;
 }
@@ -100,7 +100,7 @@ unsigned long long tree::eval_sum_openmp(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by openmp algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by openmp algorithm with " << thread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;	
 }
@@ -146,7 +146,7 @@ long double tree::eval_geom_mean_pthread(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by pthread algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by pthread algorithm with " << thread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;	
 }
@@ -169,7 +169,7 @@ long double tree::eval_geom_mean_openmp(unsigned int level)
 
 	auto stop = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(stop - start).count();
-	cout << "Time taken by openmp algorithm with " << pthread_count(level) << " threads: " << duration << " seconds" << endl;
+	cout << "Time taken by openmp algorithm with " << thread_count(level) << " threads: " << duration << " seconds" << endl;
 
 	return sum;	
 }
